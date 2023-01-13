@@ -1,0 +1,54 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Release
+
+on:
+  push:
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Verify commit exists in origin/main
+      run: |
+        git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+        git branch --remote --contains | grep origin/main
+    
+    - name: Set VERSION env var from tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+    
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: ./MagicLibrary
+
+    - name: Build
+      run: dotnet build --configuration Release /p:Version=${VERSION} --no-restore
+      working-directory: ./MagicLibrary
+
+    - name: Test
+      run: dotnet test --configuration Release /p:Version=${VERSION} --no-build --verbosity normal
+      working-directory: ./MagicLibrary
+
+    - name: Pack
+      run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
+      working-directory: ./MagicLibrary
+
+    - name: Push
+      run: dotnet nuget push MagicLibrary.${VERSION}.nupkg --source https://nuget.pkg.github.com/vivere-dally/index.json --api-key ${GITHUB_TOKEN}
+      working-directory: ./MagicLibrary
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
