@@ -47,8 +47,5 @@ jobs:
       working-directory: ./MagicLibrary
 
     - name: Push
-      run: dotnet nuget push MagicLibrary.${VERSION}.nupkg --source https://nuget.pkg.github.com/vivere-dally/index.json --api-key ${GITHUB_TOKEN}
+      run: dotnet nuget push MagicLibrary.${VERSION}.nupkg --source "https://nuget.pkg.github.com/vivere-dally/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
       working-directory: ./MagicLibrary
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
